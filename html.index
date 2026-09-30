@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pedra, Papel e Tesoura - Golden Edition</title>
+<style>
+:root{--bg:#f6efd9;--card:#fffaf0;--text:#3a2a05;--gold:#b8860b;--gold2:#e8b923;--line:#d9b84a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15110a;--card:#241c0e;--text:#f7ecc8;--gold:#e8b923;--gold2:#ffd95a;--line:#8a6d1c}}
+:root[data-theme="dark"]{--bg:#15110a;--card:#241c0e;--text:#f7ecc8;--gold:#e8b923;--gold2:#ffd95a;--line:#8a6d1c}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font-family:Georgia,'Times New Roman',serif;overflow:hidden}
+.stage{position:relative;height:100%;max-width:100%}
+.group{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:min(92%,640px);
+transition:transform 2.2s ease-in-out}
+.group.up{transform:translate(-50%,calc(-50% - 30vh))}
+h1{margin:0 0 28px;font-size:clamp(26px,6vw,46px);line-height:1.15;color:var(--gold);text-shadow:0 2px 12px rgba(232,185,35,.35)}
+h1 small{display:block;font-size:.5em;letter-spacing:.25em;text-transform:uppercase;margin-top:8px;color:var(--gold2)}
+button{font-family:inherit;cursor:pointer;border:0;border-radius:12px;font-size:20px;padding:14px 44px;font-weight:bold}
+.play{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#2a1d00;box-shadow:0 4px 18px rgba(232,185,35,.4)}
+.start{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#22a447;color:#fff;
+opacity:0;pointer-events:none;transition:opacity 1.6s ease 1s}
+.start.show{opacity:1;pointer-events:auto}
+#game{display:none;height:100%;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:16px;box-sizing:border-box;text-align:center}
+#game.on{display:flex}
+.score{font-size:22px;color:var(--gold)}
+.round{font-size:15px;opacity:.8}
+.choices{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.sq{width:clamp(88px,26vw,130px);height:clamp(88px,26vw,130px);font-size:clamp(44px,12vw,64px);background:var(--card);
+border:3px solid var(--line);border-radius:16px;padding:0;transition:transform .15s,border-color .15s}
+.sq:hover:not(:disabled){transform:translateY(-4px);border-color:var(--gold2)}
+.sq:disabled{cursor:default;opacity:.55}
+.sq.sel{opacity:1;border-color:var(--gold2);transform:scale(1.06)}
+.barwrap{width:min(92%,420px);height:14px;background:var(--card);border:2px solid var(--line);border-radius:10px;overflow:hidden}
+#bar{height:100%;width:100%;background:#ff8c00}
+.pc{min-height:30px;font-size:18px}
+.msg{min-height:54px;padding:12px 22px;border-radius:10px;color:#fff;font-weight:bold;font-size:18px;visibility:hidden}
+.msg.show{visibility:visible}
+.msg.win{background:#22a447}.msg.lose{background:#d62828}.msg.tie{background:#8a7a4a}
+#end{display:none;flex-direction:column;align-items:center;gap:14px}
+#end.on{display:flex}
+#final{font-size:clamp(28px,7vw,44px);font-weight:bold}
+#final.win{color:#22a447}#final.lose{color:#d62828}#final.tie{color:var(--gold)}
+#tally{font-size:22px}
+</style>
+</head>
+<body>
+<div class="stage" id="menu">
+  <div class="group" id="group">
+    <h1>Pedra, Papel e Tesoura<small>The game - Golden Edition</small></h1>
+    <button class="play" id="btnPlay">Jogar</button>
+  </div>
+  <button class="start" id="btnStart">Iniciar</button>
+</div>
+
+<div id="game">
+  <div class="round" id="roundInfo"></div>
+  <div class="score" id="score"></div>
+  <div class="choices">
+    <button class="sq" data-v="pedra" aria-label="Pedra">✊</button>
+    <button class="sq" data-v="papel" aria-label="Papel">✋</button>
+    <button class="sq" data-v="tesoura" aria-label="Tesoura">✌️</button>
+  </div>
+  <div class="barwrap"><div id="bar"></div></div>
+  <div class="pc" id="pc"></div>
+  <div class="msg" id="msg"></div>
+  <div id="end">
+    <div id="final"></div>
+    <div id="tally"></div>
+    <button class="play" id="btnAgain">Jogar de novo</button>
+  </div>
+</div>
+
+<script>
+const EMOJI={pedra:"✊",papel:"✋",tesoura:"✌️"};
+const BEATS={pedra:"tesoura",papel:"pedra",tesoura:"papel"};
+const TOTAL=5, TIME=5000;
+const $=id=>document.getElementById(id);
+let round,you,pc,locked,timer,t0;
+
+$("btnPlay").onclick=()=>{
+  $("btnPlay").disabled=true;
+  $("group").classList.add("up");
+  $("btnStart").classList.add("show");
+};
+$("btnStart").onclick=()=>{
+  $("menu").style.display="none";
+  $("game").classList.add("on");
+  newGame();
+};
+$("btnAgain").onclick=newGame;
+document.querySelectorAll(".sq").forEach(b=>b.onclick=()=>choose(b.dataset.v,b));
+
+function newGame(){
+  round=0;you=0;pc=0;
+  $("end").classList.remove("on");
+  nextRound();
+}
+function updateScore(){
+  $("score").textContent="Você "+you+" x "+pc+" Computador";
+  $("roundInfo").textContent="Rodada "+Math.min(round,TOTAL)+" de "+TOTAL;
+}
+function nextRound(){
+  round++;locked=false;
+  updateScore();
+  $("msg").className="msg";
+  $("pc").textContent="";
+  document.querySelectorAll(".sq").forEach(b=>{b.disabled=false;b.classList.remove("sel")});
+  t0=performance.now();
+  clearInterval(timer);
+  timer=setInterval(()=>{
+    const left=Math.max(0,1-(performance.now()-t0)/TIME);
+    $("bar").style.width=(left*100)+"%";
+    if(left<=0){clearInterval(timer);choose(null,null);}
+  },40);
+}
+function choose(v,btn){
+  if(locked)return;
+  locked=true;clearInterval(timer);
+  document.querySelectorAll(".sq").forEach(b=>b.disabled=true);
+  if(btn)btn.classList.add("sel");
+  const opts=Object.keys(EMOJI);
+  const cpu=opts[Math.floor(Math.random()*3)];
+  $("pc").textContent="Computador escolheu: "+EMOJI[cpu]+" "+cpu;
+  const m=$("msg");
+  if(v===null){pc++;m.textContent="Tempo esgotado! Você perdeu a rodada";m.className="msg show lose";}
+  else if(v===cpu){m.textContent="Empate!";m.className="msg show tie";}
+  else if(BEATS[v]===cpu){you++;m.textContent="Você ganhou a rodada";m.className="msg show win";}
+  else{pc++;m.textContent="Você perdeu a rodada";m.className="msg show lose";}
+  updateScore();
+  setTimeout(()=>round>=TOTAL?finish():nextRound(),2000);
+}
+function finish(){
+  $("msg").className="msg";
+  $("pc").textContent="";
+  const f=$("final");
+  if(you>pc){f.textContent="Você ganhou o jogo!";f.className="win";}
+  else if(pc>you){f.textContent="Você perdeu o jogo";f.className="lose";}
+  else{f.textContent="O jogo empatou!";f.className="tie";}
+  $("tally").textContent="Placar final: Você "+you+" x "+pc+" Computador";
+  $("end").classList.add("on");
+}
+</script>
+</body>
+</html>
