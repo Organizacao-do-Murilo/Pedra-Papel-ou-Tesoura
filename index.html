@@ -5,21 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pedra, Papel e Tesoura - Golden Edition</title>
 <style>
-:root{--bg:#f6efd9;--card:#fffaf0;--text:#3a2a05;--gold:#b8860b;--gold2:#e8b923;--line:#d9b84a;
+:root{--bg:#f6efd9;--card:#fffaf0;--text:#3a2a05;--gold:#b8860b;--gold2:#e8b923;--line:#d9b84a;--glow:rgba(232,185,35,.4);--btntext:#2a1d00;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15110a;--card:#241c0e;--text:#f7ecc8;--gold:#e8b923;--gold2:#ffd95a;--line:#8a6d1c}}
-:root[data-theme="dark"]{--bg:#15110a;--card:#241c0e;--text:#f7ecc8;--gold:#e8b923;--gold2:#ffd95a;--line:#8a6d1c}
+@media (prefers-color-scheme:dark){:root:not([data-theme]){--bg:#15110a;--card:#241c0e;--text:#f7ecc8;--gold:#e8b923;--gold2:#ffd95a;--line:#8a6d1c}}
+:root[data-theme="light"]{--bg:#ffffff;--card:#eef7ff;--text:#0b2a3f;--gold:#3a9ee0;--gold2:#7cc8f7;--line:#a6d6f5;--glow:rgba(90,175,235,.4);--btntext:#06263d}
+:root[data-theme="dark"]{--bg:#000000;--card:#070e1f;--text:#c9d9ff;--gold:#2a5bd7;--gold2:#3b72f0;--line:#183a94;--glow:rgba(42,91,215,.45);--btntext:#ffffff}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--text);font-family:Georgia,'Times New Roman',serif;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:Georgia,'Times New Roman',serif;overflow:hidden;transition:background .3s,color .3s}
 .stage{position:relative;height:100%;max-width:100%}
 .group{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:min(92%,640px);
 transition:transform 2.2s ease-in-out}
 .group.up{transform:translate(-50%,calc(-50% - 30vh))}
-h1{margin:0 0 28px;font-size:clamp(26px,6vw,46px);line-height:1.15;color:var(--gold);text-shadow:0 2px 12px rgba(232,185,35,.35)}
-h1 small{display:block;font-size:.5em;letter-spacing:.25em;text-transform:uppercase;margin-top:8px;color:var(--gold2)}
+h1{margin:0 0 28px;font-size:clamp(26px,6vw,46px);line-height:1.15;color:var(--text)}
+h1 small{display:block;font-size:.5em;letter-spacing:.25em;text-transform:uppercase;margin-top:8px;color:var(--text)}
+h1 .golden{color:#d4a017;text-shadow:0 2px 12px rgba(232,185,35,.45)}
 button{font-family:inherit;cursor:pointer;border:0;border-radius:12px;font-size:20px;padding:14px 44px;font-weight:bold}
-.play{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#2a1d00;box-shadow:0 4px 18px rgba(232,185,35,.4)}
+.play{background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--btntext);box-shadow:0 4px 18px var(--glow)}
 .start{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#22a447;color:#fff;
 opacity:0;pointer-events:none;transition:opacity 1.6s ease 1s}
 .start.show{opacity:1;pointer-events:auto}
@@ -34,7 +36,7 @@ border:3px solid var(--line);border-radius:16px;padding:0;transition:transform .
 .sq:disabled{cursor:default;opacity:.55}
 .sq.sel{opacity:1;border-color:var(--gold2);transform:scale(1.06)}
 .barwrap{width:min(92%,420px);height:14px;background:var(--card);border:2px solid var(--line);border-radius:10px;overflow:hidden}
-#bar{height:100%;width:100%;background:#ff8c00}
+#bar{height:100%;width:100%;background:var(--gold2)}
 .pc{min-height:30px;font-size:18px}
 .msg{min-height:54px;padding:12px 22px;border-radius:10px;color:#fff;font-weight:bold;font-size:18px;visibility:hidden}
 .msg.show{visibility:visible}
@@ -44,12 +46,32 @@ border:3px solid var(--line);border-radius:16px;padding:0;transition:transform .
 #final{font-size:clamp(28px,7vw,44px);font-weight:bold}
 #final.win{color:#22a447}#final.lose{color:#d62828}#final.tie{color:var(--gold)}
 #tally{font-size:22px}
+
+/* Aparência */
+.ap{position:fixed;left:12px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:10}
+#btnAp{font-size:15px;padding:9px 18px;background:var(--card);color:var(--text);border:2px solid var(--line);border-radius:10px}
+.panel{display:none;margin-top:8px;padding:12px 14px;gap:12px;background:var(--card);border:2px solid var(--line);border-radius:12px;box-shadow:0 6px 20px var(--glow);width:max-content}
+.panel.on{display:flex}
+.dot{width:34px;height:34px;padding:0;border-radius:50%;border:3px solid transparent;outline:2px solid var(--line);outline-offset:2px}
+.dot.active{outline:3px solid var(--text)}
+.dot[data-t="gold"]{background:linear-gradient(135deg,#ffd95a,#b8860b)}
+.dot[data-t="light"]{background:#fff;border-color:#7cc8f7}
+.dot[data-t="dark"]{background:#000;border-color:#2a5bd7}
 </style>
 </head>
 <body>
+<div class="ap">
+  <button id="btnAp" aria-expanded="false">Aparência</button>
+  <div class="panel" id="panel">
+    <button class="dot" data-t="gold" aria-label="Dourado" title="Dourado"></button>
+    <button class="dot" data-t="light" aria-label="Branco e azul claro" title="Branco e azul claro"></button>
+    <button class="dot" data-t="dark" aria-label="Preto e azul escuro" title="Preto e azul escuro"></button>
+  </div>
+</div>
+
 <div class="stage" id="menu">
   <div class="group" id="group">
-    <h1>Pedra, Papel e Tesoura<small>The game - Golden Edition</small></h1>
+    <h1>Pedra, Papel e Tesoura<small>The game - <span class="golden">Golden Edition</span></small></h1>
     <button class="play" id="btnPlay">Jogar</button>
   </div>
   <button class="start" id="btnStart">Iniciar</button>
@@ -76,10 +98,31 @@ border:3px solid var(--line);border-radius:16px;padding:0;transition:transform .
 <script>
 const EMOJI={pedra:"✊",papel:"✋",tesoura:"✌️"};
 const BEATS={pedra:"tesoura",papel:"pedra",tesoura:"papel"};
-const TOTAL=5, TIME=5000;
+const GOAL=5, TIME=5000;
 const $=id=>document.getElementById(id);
 let round,you,pc,locked,timer,t0;
 
+/* Aparência */
+function setTheme(t,save){
+  if(t==="gold")document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme",t);
+  document.querySelectorAll(".dot").forEach(d=>d.classList.toggle("active",d.dataset.t===t));
+  if(save){try{localStorage.setItem("ppt-theme",t)}catch(e){}}
+}
+let saved="gold";
+try{saved=localStorage.getItem("ppt-theme")||"gold"}catch(e){}
+setTheme(saved,false);
+$("btnAp").onclick=e=>{
+  e.stopPropagation();
+  const on=$("panel").classList.toggle("on");
+  $("btnAp").setAttribute("aria-expanded",on);
+};
+document.querySelectorAll(".dot").forEach(d=>d.onclick=e=>{e.stopPropagation();setTheme(d.dataset.t,true)});
+document.addEventListener("click",e=>{
+  if(!e.target.closest(".ap")){$("panel").classList.remove("on");$("btnAp").setAttribute("aria-expanded",false)}
+});
+
+/* Jogo */
 $("btnPlay").onclick=()=>{
   $("btnPlay").disabled=true;
   $("group").classList.add("up");
@@ -100,7 +143,7 @@ function newGame(){
 }
 function updateScore(){
   $("score").textContent="Você "+you+" x "+pc+" Computador";
-  $("roundInfo").textContent="Rodada "+Math.min(round,TOTAL)+" de "+TOTAL;
+  $("roundInfo").textContent="Rodada "+round+" · Primeiro a "+GOAL+" pontos vence";
 }
 function nextRound(){
   round++;locked=false;
@@ -130,15 +173,14 @@ function choose(v,btn){
   else if(BEATS[v]===cpu){you++;m.textContent="Você ganhou a rodada";m.className="msg show win";}
   else{pc++;m.textContent="Você perdeu a rodada";m.className="msg show lose";}
   updateScore();
-  setTimeout(()=>round>=TOTAL?finish():nextRound(),2000);
+  setTimeout(()=>(you>=GOAL||pc>=GOAL)?finish():nextRound(),2000);
 }
 function finish(){
   $("msg").className="msg";
   $("pc").textContent="";
   const f=$("final");
   if(you>pc){f.textContent="Você ganhou o jogo!";f.className="win";}
-  else if(pc>you){f.textContent="Você perdeu o jogo";f.className="lose";}
-  else{f.textContent="O jogo empatou!";f.className="tie";}
+  else{f.textContent="Você perdeu o jogo";f.className="lose";}
   $("tally").textContent="Placar final: Você "+you+" x "+pc+" Computador";
   $("end").classList.add("on");
 }
